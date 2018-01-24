@@ -5,7 +5,7 @@ Vue.component('car-select', {
 							@keyup="checkKeyCode($event, index)"
 							@click="plateFocus($event, index)"
 							@change="plateChange"
-
+							ref="input"
 							:placeholder="sub"
 							maxlength="1"
 							class="plate_character" type="text" v-for="(sub, index) in data" :value="sub" name="">
@@ -74,13 +74,25 @@ Vue.component('car-select', {
 
 		},
 		checkKeyCode(e, index){
+			console.log(e.keyCode)
+			if(
+				(e.keyCode >= 65 && e.keyCode <= 90) ||
+				(e.keyCode >= 48 && e.keyCode <= 57) ||
+				(e.keyCode >= 96 && e.keyCode <= 105)
+			){
 
-			if(e.keyCode >= 65 && e.keyCode <= 90){
-				console.log(index)
 				// 键盘直接输入
-				if(index > 0){
+				if(index > 0 && e.keyCode >= 35 && e.keyCode <= 45 ){
+					this.data[index] = '';
+					console.log(e.keyCode, e.key)
+					this.data.splice(index, 1, e.key)
+					console.log(this.$refs.input[index++])
+					this.$refs.input[index++].focus()
+				} else if( index > 0){
 					this.data[index] = '';
 					this.data.splice(index, 1, e.key.toUpperCase())
+					console.log(this.$refs.input[index++])
+					this.$refs.input[index++].focus()
 				}
 
 				const filteredProvinceList = this.car_in.carNumber.filter( item => {

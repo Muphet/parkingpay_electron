@@ -81,7 +81,7 @@
           <div class="panel_tips">
             入场信息-最近一次未确认的入场记录
           </div>
-          <div class="panel layui-form">
+          <div class="panel layui-form" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
             <div class="in_car_imgbox">
               <span v-if="car_in.picture">
                   <img class="carimg" v-if="switch_car" :src="car_in.picture">
@@ -96,14 +96,17 @@
             </div>
             <div class="group">
               <p>识别的车牌号码</p>
-              <car-select :data="car_in.carNum"></car-select>
+              <div class="disabled_condition">
+                <car-select :data="car_in.carNum"></car-select>
+                <div class="car_carnumber_disabled" v-if="carInConfirmBtnDisabled"></div>
+              </div>
             </div>
             <div class="group">
               <p>车辆类型</p>
               <div class="layui-input-block">
                 <select name="interest" lay-filter="aihao">
-                  <option value="0">越期约租车</option>
-                  <option value="1">特殊车辆</option>
+                  <option value="0">小型车</option>
+                  <option value="1">大型车</option>
                 </select>
                 </div>
             </div>
@@ -132,9 +135,9 @@
             </div>
             <transition-group v-else name="list-complete" tag="p">
 
-              <div  class="plate_item list-complete-item" v-for="(item, index) in car_out" v-bind:key="item">
+              <div  class="plate_item list-complete-item" v-for="(item, index) in car_out" v-bind:key="item" >
                 <div class="toptips">车辆出场信息</div>
-                <div class="plate_item_container">
+                <div class="plate_item_container" v-loading="item.carItemOutLoading" element-loading-text="数据提交中...">
                   <div class="vehicle_image">
                     <img v-if="item.picture" :src="item.picture">
                     <img v-else class="default_in_car" src="images/default_in_car.png">
@@ -207,7 +210,7 @@
                         <div class="form_select_container">
                           <div class="form_input_container">
                             <i class="currency">￥</i>
-                            <input class="form_input" type="" name="">
+                            <input class="form_input" type="text" v-number-only name="">
                           </div>
                         </div>
                       </div>

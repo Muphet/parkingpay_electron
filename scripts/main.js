@@ -7,9 +7,9 @@ var config = {
 	cout: 'http://127.0.0.1:8110/cout',
 	outToken: 'https://www.parkingpay.net/api_v2.php',
 	total: 'https://www.parkingpay.net/api/charge_amount.php',
-	open_in: 'http://192.168.0.132:8110/open_in',
+	open_in: 'http://127.0.0.1:8110/open_in',
 	bupai: 'http://127.0.0.1:8110/recap',
-	open_out: 'http://192.168.0.132:8110/open_out',
+	open_out: 'http://127.0.0.1:8110/open_out',
 	submitEnter: 'https://www.parkingpay.net/api_v2.php',
 	login: 'https://www.parkingpay.net/api/login.php'
 };
@@ -56,11 +56,24 @@ var vm = new Vue({
 			],
 			carSelectPanel: false,
 			username: '',
-			loginTime: ''
+			loginTime: '',
+
+
+			carInSubmitLoading: false
 		};
 	},
 
 	computed: {},
+
+	watch: {
+		'car_in.carNum': function(oldValue, newValue){
+			if(oldValue !== newValue){
+				this.car_in.carInConfirmBtnDisabled = false
+			} else {
+				this.car_in.carInConfirmBtnDisabled = true
+			}
+		}
+	},
 
 	mounted: function mounted() {
 		var that = this;
@@ -69,9 +82,12 @@ var vm = new Vue({
 		this.getLoopPlateIn();
 		this.getLoopPlateOut();
 		this.getTotal();
-
 		this.$jquery.ajaxSetup({
-			contentType: 'application/x-www-form-urlencoded; charset=utf-8'
+			contentType: 'application/x-www-form-urlencoded; charset=utf-8',
+			timeout: 15000,
+			error: function(xhr, status){
+				console.log('errror ' + xhr + ' code ' +status)
+			}
 		});
 
 		layui.use(['layer'], function () {
@@ -161,8 +177,9 @@ var vm = new Vue({
 
 			axios.get(config.cin + '?station_id=' + config.station_id).then(function (res) {
 				if (res.data != '') {
-					console.log(res.data);
-					_this3.handlePlateInData(res.data);
+					if(res.data.carNum !== '无牌车'){
+						_this3.handlePlateInData(res.data);
+					}
 				} else {}
 				setTimeout(function () {
 					_this3.getLoopPlateIn();
@@ -175,14 +192,15 @@ var vm = new Vue({
 			const _data = {};
 
 			_data.carNum = data.carNum.split('');
-			_data.picture = 'data:image/jpeg;base64,' + data.picture;
-			_data.closeup_pic = 'data:image/jpeg;base64,' + data.closeup_pic;
+			_data.picture = 'data:image/jpeg;base64,' + data.picture.replace(/ /g,"+");
+			_data.closeup_pic = 'data:image/jpeg;base64,' + data.closeup_pic.replace(/ /g,"+");
 			_data.time = new Date(data.intime * 1000).Format('yyyy-MM-dd hh:mm:ss');
 			_data.color = data.color;
 
 			// 判断入场车牌号是否重复
-			if(this.car_in.carNum && _data.carNum.join('') == this.car_in.carNum.join('')) return;
-
+			if( new Date(_data.time).getTime() - new Date(this.car_in.time).getTime() < 60000
+						&& this.car_in.carNum
+						&& _data.carNum.join('') == this.car_in.carNum.join('')) return;
 
 			this.carInStorage.push(_data);
 			this.checkStorage();
@@ -190,7 +208,6 @@ var vm = new Vue({
 
 		checkStorage: function checkStorage() {
 			if (this.carInStorage.length > 0 && this.carInConfirmBtnDisabled) {
-
 				this.car_in = this.carInStorage[0];
 				this.carInConfirmBtnDisabled = false;
 			}
@@ -201,16 +218,15 @@ var vm = new Vue({
 
 			var car = this.car_in;
 			var that = this;
-
+			this.carInSubmitLoading = true;
 			this.$jquery.post(config.submitEnter + '?action=user_in&pid=' + config.pid + '&station_id=' + config.station_id, {
 				content: JSON.stringify({
 					'carNum': car.carNum.join(''),
-					'intime': car.time,
+					'intime': new Date(car.time).getTime() / 1000,
 					'color': car.color
 				})
 			}, function (res) {
-
-				console.log('入场', res)
+				that.carInSubmitLoading = false;
 				if (res.error_code == '0') {
 					that.addedEnterList();
 					that.carInStorage.shift();
@@ -219,6 +235,7 @@ var vm = new Vue({
 					that.carInConfirmBtnDisabled = true;
 					that.checkStorage();
 				} else {
+					that.carInConfirmBtnDisabled = false;
 					that.carConfirmEnter();
 					console.log('提交失败， 再次提交中');
 				}
@@ -228,10 +245,19 @@ var vm = new Vue({
 
 		// 添加至进场确认列表
 		addedEnterList: function addedEnterList() {
-			this.alreadyEntered.push({
-				num: this.car_in.carNum.join(''),
-				time: this.car_in.time
-			});
+
+			if(this.alreadyEntered.length == 0){
+				this.alreadyEntered.push({
+					num: this.car_in.carNum.join(''),
+					time: this.car_in.time
+				});
+			} else {
+				this.alreadyEntered.unshift({
+					num: this.car_in.carNum.join(''),
+					time: this.car_in.time
+				});
+			}
+
 		},
 
 
@@ -243,39 +269,47 @@ var vm = new Vue({
 					var response = res.data;
 					var _car_out = {};
 
-					console.log('intime', response)
-
-					// _car_out.unshift({
-					// 	ref: rand,
-					// 	carNum: response.carNum.split(''),
-					// 	intime: response.intime == '' ? '请选择入场时间' : new Date(response.intime*1000).Format("yyyy-MM-dd hh:mm:ss") ,
-					// 	outtime: new Date(response.outtime*1000).Format("yyyy-MM-dd hh:mm:ss"),
-					// 	special: false,
-					// 	isConfirm: false,
-					// 	color: response.color
-					// })
-
-
 					_car_out.carNum = response.carNum.split('');
-					_car_out.picture = 'data:image/jpeg;base64,' + response.picture;
-					_car_out.closeup_pic = 'data:image/jpeg;base64,' + response.closeup_pic;
+					_car_out.picture = 'data:image/jpeg;base64,' + response.picture.replace(/ /g, '+');
+					_car_out.closeup_pic = 'data:image/jpeg;base64,' + response.closeup_pic.replace(/ /g, '+');
+
+					console.log('最新出场纪录', response)
+
+					if(response.intime == ''){
+						_car_out.disabled = true;
+					} else {
+						_car_out.disabled = false;
+					}
 					_car_out.intime = response.intime == '' ? '' : new Date(response.intime * 1000).Format('yyyy-MM-dd hh:mm:ss');
 					_car_out.outtime = new Date(response.outtime * 1000).Format('yyyy-MM-dd hh:mm:ss');
 					_car_out.special = false;
 					_car_out.isConfirm = false;
 					_car_out.color = response.color;
-					console.log(_car_out)
+					_car_out.carItemOutLoading = false;
+
 					// 判断出场车牌号是否重复
-					if(that.car_out.length && that.car_out[0].carNum && _car_out.carNum.join('') == that.car_out[0].carNum.join('')){
+					if(that.car_out.length && new Date(response.outtime * 1000).getTime() - new Date(that.car_out[0].outtime).getTime() < 60000){
+
+						setTimeout(function () {
+							that.getLoopPlateOut();
+						}, 500);
+						return
+					}
+					if(that.car_out.length && that.car_out[0].carNum && _car_out.carNum.join('') == that.car_out[0].carNum){
 						_car_out = {};
+						setTimeout(function () {
+							that.getLoopPlateOut();
+						}, 500);
 						return;
 					}
-
+					console.log(_car_out)
 					that.$nextTick(function () {
 						that.car_out.unshift(_car_out);
 					});
 
-					that.getOutToken(_car_out);
+					setTimeout( () => {
+						that.getOutToken(_car_out);
+					}, 200) 
 				}
 
 				setTimeout(function () {
@@ -286,26 +320,27 @@ var vm = new Vue({
 
 		getOutToken: function getOutToken(data) {
 			var _this4 = this;
-
 			var that = this;
 
-			console.log(data)
+			this.car_out[0].carItemOutLoading = true;
 			this.$jquery.post(config.outToken + '?action=user_out&pid=' + config.pid + '&station_id=' + config.station_id, {
-
 				content: JSON.stringify({
 					'carNum': data.carNum.join(''),
-					'outtime': data.outtime,
+					'intime': data.intime || '',
+					'outtime': new Date(data.outtime).getTime()/1000,
 					'color': data.color
 				})
 			}, function (res) {
-				console.log('outToken', res)
+				that.car_out[0].carItemOutLoading = false;
 				data.open = res.open;
 				data.payway = res.payway;
 				data.money = res.money;
 				data.tip = res.tip;
+				if(res.intime != ''){
+					that.car_out[0].disabled = false
+				}
+				data.intime = res.intime
 				// open 1:可以起杆 0：不起杆
-
-				that.updateIntime(res.intime)
 
 				if (res.open == 1) {
 					data.disabled = true;
@@ -326,9 +361,11 @@ var vm = new Vue({
 							elem: '#time-edit', //指定元素
 							type: type,
 							change: function change(value) {
+								console.log('layer change', value)
 								that.updateIntime(value);
 							},
 							done: function done(value) {
+								console.log('layer done', value)
 								that.updateIntime(value);
 							}
 						});
@@ -338,6 +375,10 @@ var vm = new Vue({
 			}, 'json');
 		},
 		updateIntime: function updateIntime(intime) {
+      // 补入入场时间
+			this.car_out[0].intime = new Date(intime).getTime() / 1000;
+			this.getOutToken(this.car_out[0])
+
 			const data = this.car_out[0];
 			data.intime = intime;
 			this.$set(this.car_out[0], data);
@@ -413,7 +454,7 @@ var vm = new Vue({
 		},
 		openInGate: function openInGate() {
 			var that = this;
-
+			that.$layer.msg('测试起竿成功');
 			this.$jquery.get(config.open_in + '?station_id=' + config.station_id, function (res) {
 				that.$layer.msg('起竿成功');
 			});
@@ -450,4 +491,16 @@ Date.prototype.Format = function (fmt) {
 		if (new RegExp('(' + k + ')').test(fmt)) fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
 	}return fmt;
 };
+
+Vue.directive('numberOnly', {
+	bind: function(){
+		this.handler = function(){
+			this.el.value = this.el.value.replace(/\D+/, '')
+		}.bind(this);
+		this.el.addEventListener('input', this.handler)
+	},
+	unbind: function(){
+		this.el.removeEventListener('input', this.handler)
+	}
+})
 //# sourceMappingURL=main.js.map
