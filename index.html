@@ -10,6 +10,7 @@
 </head>
 <body>
   <div id="app" v-cloak>
+
     <el-dialog :visible="visible" title="收费员登录  ">
           <el-form ref="form" :model="form" label-width="80px" :rules="rules">
         <el-form-item label="用户名" prop="name">
@@ -84,11 +85,11 @@
           <div class="panel layui-form" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
             <div class="in_car_imgbox">
               <span v-if="car_in.picture">
-                  <img class="carimg" v-if="switch_car" :src="car_in.picture">
+                  <img class="carimg" v-if="switch_car" :src="car_in.picture" v-preview="imgPopup">
                   <img class="carimg" v-else :src="car_in.closeup_pic">
                   <button class="switch_car" @click="switch_car_handle">{{switch_car ? '全景' : '车牌号'}}</button>
               </span>
-              <img v-else class="carimg default" src="images/default_in_car.png">
+              <img v-else class="carimg default" src="images/default_in_car.png" v-preview="imgPopup">
             </div>
             <div class="car_in_times">
               入场时间：
@@ -237,7 +238,9 @@
       </div>
     </div>
 
+    <preview-img :src="previewImgPath" @close="closePreview" v-if="previewImgVisible"></preview-img>
   </div>
+
 
   <script src='framsworks/jquery/jquery.min.js'></script>
   <script src='framsworks/axios/axios.min.js'></script>
@@ -247,6 +250,7 @@
 
 
   <script src="scripts/car_select.js"></script>
+  <script src="scripts/preview-img.js"></script>
   <script src='scripts/main.js'></script>
 
   <script>

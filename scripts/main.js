@@ -18,6 +18,9 @@ var vm = new Vue({
 	el: '#app',
 	data: function data() {
 		return {
+			previewImgVisible: false,
+			previewImgPath: '',
+			message: 'hello world',
 			visible: false,
 			form: {
 				name: '',
@@ -81,7 +84,7 @@ var vm = new Vue({
 		this.initLayUi();
 		this.getLoopPlateIn();
 		this.getLoopPlateOut();
-		this.getTotal();
+
 		this.$jquery.ajaxSetup({
 			contentType: 'application/x-www-form-urlencoded; charset=utf-8',
 			timeout: 15000,
@@ -93,9 +96,33 @@ var vm = new Vue({
 		layui.use(['layer'], function () {
 			that.$layer = layui.layer;
 		});
+
+		this.checkLogin()
 	},
 
 	methods: {
+		closePreview: function closePreview(){
+			console.log('preview parent')
+			this.previewImgVisible = false;
+		},
+		imgPopup: function imgPopup( src ){
+			this.previewImgVisible = true;
+			this.previewImgPath = src;
+		},
+		checkLogin: function checkLogin(){
+			var user = localStorage.getItem('user');
+
+			if(!user){
+				this.visible = true;
+			} else {
+				const user = JSON.parse(localStorage.getItem('user'));
+				const cid = user.cid;
+				this.cid  = cid;
+				this.username = user.username
+				this.loginTime = new Date(Date.now()).Format('yyyy-MM-dd hh:mm:ss');
+				this.getTotal();
+			}
+		},
 		submitForm: function submitForm(formName) {
 			var _this = this;
 
@@ -134,6 +161,8 @@ var vm = new Vue({
 						type: 'success',
 						message: '登录成功'
 					});
+
+					localStorage.setItem('user', JSON.stringify(res.data))
 					_this2.visible = false;
 					_this2.username = res.data.username;
 					_this2.loginTime = new Date(Date.now()).Format('yyyy-MM-dd hh:mm:ss');
@@ -309,7 +338,7 @@ var vm = new Vue({
 
 					setTimeout( () => {
 						that.getOutToken(_car_out);
-					}, 200) 
+					}, 200)
 				}
 
 				setTimeout(function () {
@@ -385,6 +414,7 @@ var vm = new Vue({
 		},
 		getTotal: function getTotal() {
 			var that = this;
+
 			this.$jquery.post(config.total, {
 				cid: that.cid
 			}, function (res) {
@@ -475,32 +505,5 @@ var vm = new Vue({
 	}
 });
 
-Date.prototype.Format = function (fmt) {
-	//author: meizz
-	var o = {
-		'M+': this.getMonth() + 1, //月份
-		'd+': this.getDate(), //日
-		'h+': this.getHours(), //小时
-		'm+': this.getMinutes(), //分
-		's+': this.getSeconds(), //秒
-		'q+': Math.floor((this.getMonth() + 3) / 3), //季度
-		'S': this.getMilliseconds() //毫秒
-	};
-	if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + '').substr(4 - RegExp.$1.length));
-	for (var k in o) {
-		if (new RegExp('(' + k + ')').test(fmt)) fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(('' + o[k]).length));
-	}return fmt;
-};
 
-Vue.directive('numberOnly', {
-	bind: function(){
-		this.handler = function(){
-			this.el.value = this.el.value.replace(/\D+/, '')
-		}.bind(this);
-		this.el.addEventListener('input', this.handler)
-	},
-	unbind: function(){
-		this.el.removeEventListener('input', this.handler)
-	}
-})
 //# sourceMappingURL=main.js.map
