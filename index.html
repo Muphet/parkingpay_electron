@@ -4,13 +4,17 @@
   <meta charset="UTF-8">
   <title>收费系统</title>
   <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <link rel="stylesheet" href="plugins/mousewheel/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="plugins/mousewheel/src/css/mag.css" />
+  <link rel="stylesheet" href="plugins/mousewheel/src/theme/default.css" />
+  <link rel="stylesheet" href="plugins/mousewheel/css/index.css" />
   <link rel="stylesheet" type="text/css" href="plugins/layui/css/layui.css">
   <link rel="stylesheet" type="text/css" href="styles/car_select.css">
   <link rel="stylesheet" type="text/css" href="styles/main.css">
 </head>
 <body>
-  <div id="app" v-cloak>
 
+    <div id="app" v-cloak>
     <el-dialog :visible="visible" title="收费员登录  ">
           <el-form ref="form" :model="form" label-width="80px" :rules="rules">
         <el-form-item label="用户名" prop="name">
@@ -84,9 +88,13 @@
           </div>
           <div class="panel layui-form" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
             <div class="in_car_imgbox">
-              <span v-if="car_in.picture">
-                  <img class="carimg" v-if="switch_car" :src="car_in.picture" v-preview="imgPopup">
-                  <img class="carimg" v-else :src="car_in.closeup_pic">
+              <span v-if="car_in.picture" >
+                  <div mag-thumb="inner" v-if="switch_car">
+                    <img class="carimg"  :src="car_in.picture" v-preview="imgPopup">
+                  </div>
+                  <div mag-thumb="inner" v-else>
+                    <img class="carimg" :src="car_in.closeup_pic">
+                  </div>
                   <button class="switch_car" @click="switch_car_handle">{{switch_car ? '全景' : '车牌号'}}</button>
               </span>
               <img v-else class="carimg default" src="images/default_in_car.png" v-preview="imgPopup">
@@ -174,8 +182,6 @@
                     </div>
                   </div>
                   <div class="operation_bar">
-                    <div class="pay_text">交费情况</div>
-                    <div class="pay_status">{{item.tip}}</div>
                     <div class="pay_price">
                       <b>￥</b>{{item.money}}
                     </div>
@@ -188,6 +194,7 @@
                     <img v-else-if="item.payway == 'weixin' " class="payway" src="images/weixin.png">
                     <img v-else-if="item.payway == 'cqwallet' " class="payway" src="images/shimintong.png">
                     <img v-else-if="item.payway == 'wallet' " class="payway" src="images/yue.png">
+                    <img v-else-if="item.payway == 'monthly' " class="payway" src="images/yzc.png">
                     <img v-else-if="item.payway == '' " class="payway" src="images/xianjin.png">
                   </div>
 
@@ -250,8 +257,20 @@
 
 
   <script src="scripts/car_select.js"></script>
-  <script src="scripts/preview-img.js"></script>
-  <script src='scripts/main.js'></script>
+  <!-- <script src="scripts/preview-img.js"></script> -->
+
+  <!-- plugins  -->
+  <script src="plugins/mousewheel/js/jquery.bridget.js"></script>
+  <script src="plugins/mousewheel/js/jquery.mousewheel.min.js"></script>
+  <script src="plugins/mousewheel/js/jquery.event.drag.js"></script>
+  <script src="plugins/mousewheel/js/screenfull.js"></script>
+  <script src="plugins/mousewheel/js/hammer.min.js"></script>
+  <script src="plugins/mousewheel/js/PreventGhostClick.js"></script>
+  <script src="plugins/mousewheel/src/js/mag-analytics.js"></script>
+  <script src="plugins/mousewheel/src/js/mag.js"></script>
+  <script src="plugins/mousewheel/src/js/mag-jquery.js"></script>
+  <script src="plugins/mousewheel/src/js/mag-control.js"></script>
+  <script src="scripts/mousewheel.js"></script>
 
   <script>
 
@@ -260,10 +279,35 @@
       ipcRenderer.send('online-status-changed', navigator.onLine ? 'online' : 'offline')
     }
 
+    const initConfiguation = () => {
+      ipcRenderer.send('load')
+    }
+    var config;
+    ipcRenderer.on('asychronous-request', (event, arg) => {
+      arg = JSON.parse(arg);
+
+       config = {
+      	station_id: arg.station_id,
+      	pid: arg.pid,
+      	cin: arg.server + '/cin',
+      	cout: arg.server + '/cout',
+      	outToken: arg.api + '/api_v2.php',
+      	total: arg.api + '/api/charge_amount.php',
+      	open_in: arg.server + '/open_in',
+      	bupai: arg.server + '/recap',
+      	open_out: arg.server + '/open_out',
+      	submitEnter: arg.api + '/api_v2.php',
+      	login: arg.api + '/api/login.php',
+        led: arg.server +'/led'
+      };
+    })
+
     window.addEventListener('online',  updateOnlineStatus)
     window.addEventListener('offline',  updateOnlineStatus)
+    window.addEventListener('load',  initConfiguation)
 
     updateOnlineStatus()
   </script>
+  <script src='scripts/main.js'></script>
 </body>
 </html>

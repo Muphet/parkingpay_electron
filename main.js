@@ -1,6 +1,7 @@
 const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
 const url = require('url')
+const config = require('./config.js')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -35,6 +36,16 @@ function createWindow () {
   ipcMain.on('online-status-changed', (event, status) => {
 	  console.log(status)
 	})
+
+  ipcMain.on('load', event => {
+    const request = {
+      station_id: config.readSetting('station_id'),
+      server: config.readSetting('server'),
+      pid: config.readSetting('pid'),
+      api: config.readSetting('api')
+    }
+    event.sender.send('asychronous-request', JSON.stringify(request))
+  })
 }
 
 // This method will be called when Electron has finished

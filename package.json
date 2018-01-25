@@ -1,5 +1,11 @@
 {
-  "name"    : "parkingpay",
-  "version" : "0.1.0",
-  "main"    : "main.js"
+  "name": "parkingpay",
+  "version": "0.1.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "nconf": "^0.10.0"
+  }
 }

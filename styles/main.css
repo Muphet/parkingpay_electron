@@ -96,6 +96,7 @@ em {
 }
 #app .headers {
   background: #fff;
+  overflow: hidden;
 }
 #app .header_inline {
   height: 68px;
@@ -554,6 +555,7 @@ em {
 .bottom>.right .plate_container .plate_item_container .plate_vehicle_info .vehicle_number label {
   padding-right: 5px;
   font-size: 18px;
+  font-weight: normal;
 }
 .bottom>.right .plate_container .plate_item_container .plate_vehicle_info .time i {
   width: 20px;
@@ -594,19 +596,15 @@ em {
   margin-left: 82px;
   position: relative;
 }
-.bottom>.right .plate_container .plate_item_container .operation_bar .pay_text {
-  height: 40px;
-  line-height: 40px;
-  font-size: 18px;
-}
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_status {
-  height: 34px;
+  height: 71px;
+  font-size: 25px;
   color: #666;
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_price {
-  font-size: 35px;
+  font-size: 80px;
   font-weight: normal;
-  height: 64px;
+  height: 134px;
   line-height: 64px;
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_price b {
@@ -642,6 +640,7 @@ em {
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .payway {
   position: absolute;
+  width: 70px;
   right: 10px;
   top: 10px;
 }
