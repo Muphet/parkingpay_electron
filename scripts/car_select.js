@@ -1,5 +1,7 @@
+let catchNum = ''
 Vue.component('car-select', {
 	template: `<div class="number_plate" v-outside="handleClose">
+
 					<div class="input">
 						<input
 							@keyup="checkKeyCode($event, index)"
@@ -42,8 +44,25 @@ Vue.component('car-select', {
 			},
 			provinceDisabled: true,
 			letterDisabled: true,
-			numberDisabled: true
+			numberDisabled: true,
+			catch: ''
 		}
+	},
+	mounted(){
+		this.$jquery = jQuery.noConflict();
+		catchNum = this.data
+	},
+	computed: {
+		getDataDiff: {
+			get: function(){
+				return this.data;
+			},
+			set: function( value ){
+				console.log(value)
+			}
+		}
+	},
+	watch: {
 	},
 	directives: {
         outside: {
@@ -87,11 +106,13 @@ Vue.component('car-select', {
 					console.log(e.keyCode, e.key)
 					this.data.splice(index, 1, e.key)
 					console.log(this.$refs.input[index++])
+					if(index == this.data.length) return;
 					this.$refs.input[index++].focus()
 				} else if( index > 0){
 					this.data[index] = '';
 					this.data.splice(index, 1, e.key.toUpperCase())
 					console.log(this.$refs.input[index++])
+					if(index == this.data.length) return;
 					this.$refs.input[index++].focus()
 				}
 
@@ -103,6 +124,8 @@ Vue.component('car-select', {
 
 				if(index == 0 && filteredProvinceList.length == 1){
 					this.data.splice(0, 1, filteredProvinceList[0].value)
+					this.input_index++;
+					this.$refs.input[this.input_index].focus()
 				}
 
 			}
@@ -123,8 +146,9 @@ Vue.component('car-select', {
 				this.provinceDisabled = true;
 				this.letterDisabled = false;
 				this.numberDisabled = false;
-
 			}
+
+			this.$emit('edit')
 		},
 		handleClose(){
 			this.carDropdown = false
@@ -134,6 +158,8 @@ Vue.component('car-select', {
 			this.data[this.input_index] = e.target.dataset.key
 			this.data.splice(this.input_index, 1, e.target.dataset.key)
 			this.carDropdown = false;
+			this.input_index++;
+			this.$refs.input[this.input_index].focus()
 			this.$emit('selected', this.data)
 		}
 	}
@@ -156,18 +182,6 @@ Date.prototype.Format = function (fmt) {
 	};
 	return fmt;
 };
-
-Vue.directive('numberOnly', {
-	bind: function(){
-		this.handler = function(){
-			this.el.value = this.el.value.replace(/\D+/, '')
-		}.bind(this);
-		this.el.addEventListener('input', this.handler)
-	},
-	unbind: function(){
-		this.el.removeEventListener('input', this.handler)
-	}
-})
 
 Vue.directive('preview', {
 	bind: function(el, binding, vnode){

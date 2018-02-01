@@ -2,22 +2,48 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>收费系统</title>
-  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <title>ParkingPay(停吧)停车收费系统</title>
+  <link rel="stylesheet" href="plugins/element-ui/css/index.css">
   <link rel="stylesheet" type="text/css" href="plugins/layui/css/layui.css">
+  <link rel="stylesheet" type="text/css" href="plugins/zoomify/zoomify.min.css">
   <link rel="stylesheet" type="text/css" href="styles/car_select.css">
   <link rel="stylesheet" type="text/css" href="styles/main.css">
 </head>
-<body>
-  <div id="app" v-cloak>
+<body >
 
-    <el-dialog :visible="visible" title="收费员登录  ">
-          <el-form ref="form" :model="form" label-width="80px" :rules="rules">
-        <el-form-item label="用户名" prop="name">
-          <el-input v-model="form.name"></el-input>
+    <div id="app" v-cloak>
+
+      <el-dialog :visible.sync="queryInVisible" title="车辆入场查询" >
+        <div>
+          车牌号:
+          <el-input v-model="queryInCarNum" :autofocus="true"  @keyup.enter.native="handleQueryIn">
+            <el-button slot="append"  @click="handleQueryIn">查询</el-button>  
+          </el-input>
+        </div>
+        <br>
+        <el-table border :data="carInQueryData" stripe v-loading="queryInLoading" element-loading-text='正在查询...'>
+          <el-table-column
+            prop="carno"
+            label="车牌号">
+          </el-table-column>
+          <el-table-column
+            prop="intime"
+            label="入场时间">
+          </el-table-column>
+          <el-table-column
+            prop="station_id"
+            label="入场口">
+          </el-table-column>
+        </el-table>
+      </el-dialog>
+
+    <el-dialog :visible="visible" title="收费员登录" :show-close="false" width="30%" @open="loginOpenAutoFocus">
+      <el-form ref="form" :model="form" label-width="80px" :rules="rules" v-loading="signLoading">
+        <el-form-item label="用户名" prop="name"> 
+          <el-input v-model="form.name" ref="usernameFocus" @keyup.enter.native="tabInput"></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password"></el-input>
+          <el-input v-model="form.password" ref="passwordFocus" type="password" @keyup.enter.native="submitForm('form')"></el-input>
         </el-form-item>
 
         <el-form-item>
@@ -25,54 +51,73 @@
           <el-button @click="visible = false">取消</el-button>
         </el-form-item>
       </el-form>
-      </el-dialog>
+    </el-dialog>
     <header class="headers">
       <div class="header_inline">
         <div class="left">
-              <div class="admin_inline">
+            <div class="admin_inline">
                 <img src="images/logog_01.png">
                 <img src="images/admin-icon_02.png">
                 <span class="account">{{username}} 本次登录时间 {{loginTime}}</span>
-              </div>
             </div>
-        <div class="right" @click="changeShift">
+          </div>
+            <div class="right" @click="changeShift">
               <img src="images/huanban.png">
               换班
+            </div>
+            <div class="right" @click="queryIn">
+              查询入场
             </div>
       </div>
     </header>
     <div class="app_body">
 
       <div class="top">
-        <div class="charg_detail" :class="{'open': charge_detail}">
-              <span @click="ExpandDetail">收费详情 <i></i></span>
+        <div class="charg_detail" :class="{'open': charge_detail}" @click="ExpandDetail">
+              <span >收费详情 <i></i></span> 
             </div>
-        <div  v-if="charge_detail">
+        <div  v-if="charge_detail" class="top_charge_flex">
           <div class="item green">
-              <i class="icon"></i>
-              <div class="charge_right">
-                <p>收费金额总额</p>
-                <h1>{{total.total_amount}}</h1>
+              <div class="col_3">
+                <i class="icon"></i>
+              </div>
+              <div class="col_7">
+                <div class="charge_right">
+                  <p>收费金额总额</p>
+                  <h1>{{total.total_amount}}</h1>
+                </div>
               </div>
             </div>
             <div class="item blue">
-              <i class="icon"></i>
-              <div class="charge_right">
-                <p>收费金额总额</p>
-                <h1>{{total.online}}</h1>
+              <div class="col_3">
+                <i class="icon"></i>
+              </div>
+              <div class="col_7">
+                <div class="charge_right">
+                  <p>现金收费总额</p>
+                  <h1>{{total.offline}}</h1>
+                </div>
               </div>
             </div>
             <div class="item yellow">
-              <i class="icon"></i>
-              <div class="charge_right">
-                <p>收费金额总额</p>
-                <h1>{{total.offline}}</h1>
+              <div class="col_3">
+                <i class="icon"></i>
+              </div>
+              <div class="col_7">
+                <div class="charge_right">
+                  <p>线上收费总额</p>
+                  <h1>{{total.online}}</h1>
+                </div>
               </div>
             </div>
-            <div class="item orange">
-              <i class="icon"></i>
-              <div class="charge_right">
-                <p>查看收费详情</p>
+            <div class="item orange view_cursor">
+              <div class="col_3">
+                <i class="icon"></i>
+              </div>
+              <div class="col_7">
+                <div class="charge_right" @click="checkChargeDetaiVisible">
+                  <p class="charge_right_text">查看收费详情</p>
+                </div>
               </div>
             </div>
         </div>
@@ -80,39 +125,80 @@
       <div class="bottom">
         <div class="left">
           <div class="panel_tips">
-            入场信息-最近一次未确认的入场记录
+            入场信息-还剩 <span style="color: red; font-size: 20px;">{{carIn.length}}</span> 辆车未确认
           </div>
-          <div class="panel layui-form" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
-            <div class="in_car_imgbox">
-              <span v-if="car_in.picture">
-                  <img class="carimg" v-if="switch_car" :src="car_in.picture" v-preview="imgPopup">
-                  <img class="carimg" v-else :src="car_in.closeup_pic">
+          <div class="panel layui-form" v-if="carIn.length > 0" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
+            <div class="in_car_imgbox" >
+
+              <span v-if="carIn[0].picture" >
+                  <div mag-thumb="inner" v-if="!switch_car">
+                    <img class="carimg zoomify"   :src="carIn[0].closeup_pic" >
+                  </div>
+                  <div mag-thumb="inner" v-else>
+                    <img class="carimg zoomify"  :src="carIn[0].picture">
+                  </div>
                   <button class="switch_car" @click="switch_car_handle">{{switch_car ? '全景' : '车牌号'}}</button>
               </span>
-              <img v-else class="carimg default" src="images/default_in_car.png" v-preview="imgPopup">
+              <img v-else class="carimg default zoomify" src="images/default_in_car.png" >
             </div>
             <div class="car_in_times">
               入场时间：
-              <span>{{car_in.time}}</span>
+              <span>{{carIn[0].intime}}</span>
             </div>
             <div class="group">
-              <p>识别的车牌号码</p>
+              <p>车牌号：</p>
               <div class="disabled_condition">
-                <car-select :data="car_in.carNum"></car-select>
+                <car-select :data="carIn[0].carNum" @edit="editingCarNum"></car-select>
                 <div class="car_carnumber_disabled" v-if="carInConfirmBtnDisabled"></div>
               </div>
             </div>
             <div class="group">
-              <p>车辆类型</p>
               <div class="layui-input-block">
-                <select name="interest" lay-filter="aihao">
-                  <option value="0">小型车</option>
-                  <option value="1">大型车</option>
-                </select>
-                </div>
+                <el-select v-model="carInType" placeholder="请选择车辆类型">
+                  <el-option
+                    v-for="item in carInTypeOption"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+
+            <div class="group btn_group">
+              <button class="confirm" @click="carConfirmEnter"  :disabled="carInConfirmBtnDisabled">确认</button>
+              <br>
+              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="insertDisabled">补入</button>
+            </div>
+          </div>
+          <div class="panel" v-else>
+            <div class="in_car_imgbox" >
+              <img class="carimg default zoomify" src="images/default_in_car.png" >
+            </div>
+            <div class="car_in_times">
+              入场时间：
+              <span>--:--:-- 00:00:00</span>
             </div>
             <div class="group">
-              <button class="confirm" @click="carConfirmEnter" :disabled="carInConfirmBtnDisabled">确认</button>
+              <p>车牌号：</p>
+              <div class="disabled_condition">
+                <car-select ></car-select>
+                <div class="car_carnumber_disabled"></div>
+              </div>
+            </div>
+            <div class="group">
+              <div class="layui-input-block">
+                <el-select placeholder="请选择车辆类型">
+                  <el-option>
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+
+            <div class="group btn_group">
+              <button class="confirm" :disabled="true">确认</button>
+              <br>
+              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="insertDisabled">补入</button>
             </div>
           </div>
 
@@ -130,22 +216,25 @@
 
         <div class="right">
           <div class="plate_container " >
-            <div v-if="car_out.length == 0" class="no_out_car">
+            <div v-if="carOut.length == 0" class="no_out_car">
 
               <div>暂无车辆出场</div>
             </div>
             <transition-group v-else name="list-complete" tag="p">
 
-              <div  class="plate_item list-complete-item" v-for="(item, index) in car_out" v-bind:key="item" >
-                <div class="toptips">车辆出场信息</div>
+              <div  class="plate_item list-complete-item"  v-for="(item, index) in carOut" v-bind:key="item">
+                <div class="toptips">车辆出场信息 - {{item.tip}}</div>
                 <div class="plate_item_container" v-loading="item.carItemOutLoading" element-loading-text="数据提交中...">
                   <div class="vehicle_image">
-                    <img v-if="item.picture" :src="item.picture">
-                    <img v-else class="default_in_car" src="images/default_in_car.png">
-                    <div class="Bupai" v-if="!item.isConfirm">
-                      <img class="camera" src="images/camera.png">
-                      <span>补拍</span>
-                      <img src="images/dianji.png">
+                    <span style="position: relative; display: block; height: 100%; border: 1px solid #ddd;">
+                      <img v-if="!item.switch_car" class="default_in_car zoomify" :src="item.closeup_pic">
+                      <img v-else  class="default_in_car zoomify" :src="item.picture">
+                    </span>
+                    
+                     <button class="switch_car" @click="switchItemPreview(index)">{{item.switch_car ? '全景' : '车牌号'}}</button>
+
+                    <div class="recap">
+                      <el-button type="primary" style="width: 100%;" @click="bupai">补拍</el-button>
                     </div>
                   </div>
                   <div class="plate_vehicle_info">
@@ -154,33 +243,50 @@
 
                       <span  class="plate_readonly" v-if="item.isConfirm">{{item.carNum}}</span>
                       <div v-else class="plate_vehicle_modify" v-outside="closeCarSelectPanel" >
-                        <car-select :data="item.carNum" @selected="outCarComfirmed"></car-select>
+                        <car-select :data="item.carNum" @selected="updatePreOutNumber($event, index)"></car-select>
                       </div>
 
                     </div>
+
                     <div class="time">
-                      <label><i></i>入场时间</label>
+                      <label><i></i>入场时间 </label>
                       <div class="time_text">
-                        <span v-if="item.isConfirm" class="time_readonly" >{{item.intime}}</span>
-                        <input v-else class="time_input" id="time-edit" type=""  name="" :value="item.intime" >
+                        <el-date-picker
+                          v-if="item.isConfirm"
+                          readonly
+                          v-model="item.intime"
+                          :picker-options="pickerOptions"
+                          type="datetime"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
+                        <el-date-picker
+                          v-else
+                          @change="changeInTime(index)"
+                          v-model="item.intime"
+                          :picker-options="pickerOptions"
+                          type="datetime"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
                       </div>
                     </div>
                     <div class="time">
-                      <label><i></i>出场时间</label>
+                      <label><i></i>出场时间  <span style="color: red">({{item.stay}})</span></label>
                       <div class="time_text">
-                        <span v-if="item.isConfirm" class="time_readonly">{{item.outtime}}</span>
-                        <input v-else type="" name="" readonly :value="item.outtime" class="time_input">
+                        <el-date-picker
+                          readonly
+                          v-model="item.outtime"
+                          type="datetime"
+                          placeholder="选择日期时间">
+                        </el-date-picker>
                       </div>
                     </div>
                   </div>
                   <div class="operation_bar">
-                    <div class="pay_text">交费情况</div>
-                    <div class="pay_status">{{item.tip}}</div>
                     <div class="pay_price">
                       <b>￥</b>{{item.money}}
                     </div>
                     <div class="btn_group" v-if="!item.isConfirm">
-                      <button class="button confirm" :disabled="item.disabled" @click="carConfirmed(index)">确认</button>
+                      <button class="button confirm" :ref="item.md5" :disabled="item.disabled" @click="carConfirmedOut(index)">确认</button>
                       <button class="button special" :disabled="item.disabled" @click="specialToCharges(index)">特殊情况收费</button>
                     </div>
 
@@ -188,6 +294,7 @@
                     <img v-else-if="item.payway == 'weixin' " class="payway" src="images/weixin.png">
                     <img v-else-if="item.payway == 'cqwallet' " class="payway" src="images/shimintong.png">
                     <img v-else-if="item.payway == 'wallet' " class="payway" src="images/yue.png">
+                    <img v-else-if="item.payway == 'monthly' " class="payway" src="images/yzc.png">
                     <img v-else-if="item.payway == '' " class="payway" src="images/xianjin.png">
                   </div>
 
@@ -198,12 +305,10 @@
                       <div class="form_group">
                         <div class="form_label">点选原因</div>
                         <div class="form_select_container">
-                          <div class="layui-input-block">
-                              <select name="interest" lay-filter="aihao">
-                                <option value="0">越期约租车</option>
-                                <option value="1">特殊车辆</option>
-                              </select>
-                            </div>
+                          <el-select v-model="specialType">
+                            <el-option value="1" label="月租超期">月租超期</el-option>
+                            <el-option value="2" label="特殊车辆">特殊车辆</el-option>
+                          </el-select>
                         </div>
                       </div>
                       <div class="form_group">
@@ -211,7 +316,7 @@
                         <div class="form_select_container">
                           <div class="form_input_container">
                             <i class="currency">￥</i>
-                            <input class="form_input" type="text" v-number-only name="">
+                            <input class="form_input" type="number" v-model="revenue" name="">
                           </div>
                         </div>
                       </div>
@@ -237,8 +342,91 @@
         </div>
       </div>
     </div>
+    
+     <el-dialog
+      title="收费详情"
+      width="95%"
+      :visible.sync="chargeDetailPanelVisible">
 
-    <preview-img :src="previewImgPath" @close="closePreview" v-if="previewImgVisible"></preview-img>
+      <el-table
+        :data="logData"
+        border
+        stripe
+        style="width: 100%">
+        <el-table-column
+          prop="carno"
+          width="120"
+          label="车牌">
+        </el-table-column>
+        <el-table-column
+          prop="entertime"
+          width="180"
+          label="入场时间">
+        </el-table-column>
+        <el-table-column
+          prop="appearance"
+          width="180"
+          label="出场时间">
+        </el-table-column>
+
+        <el-table-column
+          prop="amt"
+          label="应付金额">
+        </el-table-column>
+        <el-table-column
+          prop="cost"
+          label="实付金额">
+        </el-table-column>
+        <el-table-column
+          prop="payWay"
+          width="130"
+          label="付款方式">
+        </el-table-column>
+        <el-table-column
+          prop="stay"
+          width="130"
+          label="停车时长">
+        </el-table-column>
+        <el-table-column
+          prop="phone"
+          width="110"
+          label="手机号">
+        </el-table-column>
+        <el-table-column
+          prop="internal_unit"
+          label="单位">
+        </el-table-column>
+        <el-table-column
+          prop="dis_name"
+          label="优惠类型">
+        </el-table-column>
+      </el-table>
+      <br> 
+      <div style="overflow: hidden;">
+
+        <div>
+          <span>
+            第 {{page_numer}} 页
+          </span>
+          <div style="width:150px; display: inline-block;">
+            <el-input v-model="page_numer_specified" placeholder="请输入要查看的页数" size="small">
+             <el-button slot="append" @click="viewSpecifiedPage">查看</el-button>
+            </el-input>
+          </div>
+          <div style="width:400px; display: inline-block;">
+            <el-input v-model="querycarno" placeholder="请输入车牌号" size="small">
+             <el-button slot="append" @click="handleQuerycarno">查询车牌号</el-button>
+            </el-input>
+          </div>
+          <el-button-group   style="float: right;">
+            <el-button type="default" size="small" icon="el-icon-arrow-left"  @click="page('prev')" :disabled="page_numer == 1"></el-button>
+            <el-button type="default" size="small" icon="el-icon-arrow-right" @click="page('next')" :disabled="nextDisabled"></el-button>
+          </el-button-group>
+        </div>
+      </div>
+      
+      
+    </el-dialog>
   </div>
 
 
@@ -246,13 +434,15 @@
   <script src='framsworks/axios/axios.min.js'></script>
   <script src='plugins/layui/layui.js'></script>
   <script src='framsworks/vue/vue.min.js'></script>
-  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="plugins/element-ui/js/index.js"></script>
 
 
   <script src="scripts/car_select.js"></script>
-  <script src="scripts/preview-img.js"></script>
-  <script src='scripts/main.js'></script>
-
+  <script src="plugins/zoomify/zoomify.min.js"></script>
+  <script>
+    
+  </script>
+  <!-- <script src="scripts/main2.js"></script> -->
   <script>
 
     const {ipcRenderer} = require('electron')
@@ -260,8 +450,70 @@
       ipcRenderer.send('online-status-changed', navigator.onLine ? 'online' : 'offline')
     }
 
+    const initConfiguation = () => {
+      ipcRenderer.send('load')
+    }
+    window.addEventListener('keydown', function( e ){
+      if(e.ctrlKey && e.key == 'i'){
+        ipcRenderer.send('openconsole')
+      }
+    })
+    var debug = false;
+    var config;
+    ipcRenderer.on('asychronous-request', (event, arg) => {
+      arg = JSON.parse(arg);
+      if(debug){
+        config = {
+          server: 'http://127.0.0.1:8110',
+          station_id: 1,
+          pid: 1,
+          api: 'https://www.parkingpay.net',
+          cin: 'http://127.0.0.1:8110/cin',
+          cout: 'http://127.0.0.1:8110/cout',
+          preout: 'https://www.parkingpay.net/api_v2.php?action=pre_out',
+          out: 'https://www.parkingpay.net/api_v2.php?action=user_out', //正式出场
+          submitEnter:'https://www.parkingpay.net/api_v2.php',
+          openOut: 'http://127.0.0.1:8110/open_out',
+          total: 'https://www.parkingpay.net/api/charge_amount.php',
+          open_in: 'http://127.0.0.1:8110/open_in',
+          bupai: 'http://127.0.0.1:8110/recap',
+          login: 'https://www.parkingpay.net/api/login.php',
+          led: 'http://127.0.0.1:8110/led',
+          img: 'http://127.0.0.1:8110/img',
+          carin: 'http://parking.palmtrends.com/api/car_in.php',
+        }
+      } else {
+        config = {
+          server: arg.server,
+          api: arg.api,
+          station_id: arg.station_id,
+          pid: arg.pid,
+          cin: arg.server + '/cin',
+          cout: arg.server + '/cout',
+          preout: arg.api + '/api_v2.php?action=pre_out',
+          out: arg.api + '/api_v2.php?action=user_out', 
+          submitEnter: arg.api + '/api_v2.php',
+          openOut: arg.server + '/open_out',
+          total: arg.api + '/api/charge_amount.php',
+          open_in: arg.server + '/open_in',
+          bupai: arg.server + '/recap',
+          login: arg.api + '/api/login.php',
+          led: arg.server +'/led',
+          img: arg.server +'/img',
+          carin: arg.api +'/api/car_in.php',
+        };
+      }
+       
+      
+
+      var script = document.createElement('script');
+      script.src="scripts/main2.js";
+      document.body.appendChild(script);
+    })
+
     window.addEventListener('online',  updateOnlineStatus)
     window.addEventListener('offline',  updateOnlineStatus)
+    window.addEventListener('load',  initConfiguation)
 
     updateOnlineStatus()
   </script>

@@ -1,16 +1,16 @@
 const {app, BrowserWindow, ipcMain} = require('electron')
 const path = require('path')
 const url = require('url')
+const config = require('./config.js')
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
-let onlineStatusWindow;
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({width: 1920, height: 1080})
-
+  win = new BrowserWindow({width: 1100, height: 1080})
+  win.maximize();
   // and load the index.html of the app.
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
@@ -19,7 +19,6 @@ function createWindow () {
   }))
 
   // Open the DevTools.
-  win.webContents.openDevTools()
 
   // Emitted when the window is closed.
   win.on('closed', () => {
@@ -29,12 +28,23 @@ function createWindow () {
     win = null
   })
 
-  onlineStatusWindow = new BrowserWindow({width: 0, height: 0, show: false})
-  onlineStatusWindow.loadURL(`file://${__dirname}/online-status.html`)
+  ipcMain.on('openconsole', () => {
+    win.webContents.openDevTools()
+  })
 
   ipcMain.on('online-status-changed', (event, status) => {
 	  console.log(status)
 	})
+
+  ipcMain.on('load', event => {
+    const request = {
+      station_id: config.readSetting('station_id'),
+      server: config.readSetting('server'),
+      pid: config.readSetting('pid'),
+      api: config.readSetting('api')
+    }
+    event.sender.send('asychronous-request', JSON.stringify(request))
+  })
 }
 
 // This method will be called when Electron has finished
