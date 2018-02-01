@@ -1,6 +1,7 @@
 'use strict';
 
 
+<<<<<<< HEAD
 	// var $host,$controls
 
 	// $host = $('[mag-thumb="outer"]');
@@ -8,6 +9,15 @@
 	//   mode: 'outer',
 	//   ratio: 1 / 1.6
 	// });
+=======
+	var $host,$controls
+
+	$host = $('[mag-thumb="outer"]');
+	$host.mag({
+	  mode: 'outer',
+	  ratio: 1 / 1.6
+	});
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 
 
 
@@ -97,6 +107,7 @@ var vm = new Vue({
 		});
 
 		setTimeout( () => {
+<<<<<<< HEAD
 			if(config){
 				console.log('config loaded!')
 				this.checkLogin()
@@ -109,6 +120,12 @@ var vm = new Vue({
 			}
 
 			
+=======
+			console.log(config)
+			this.checkLogin()
+			this.getLoopPlateIn();
+			this.getLoopPlateOut();
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 		}, 500)
 
 	},
@@ -117,10 +134,17 @@ var vm = new Vue({
 		mouseWheelInit: function(){
 			const $ = this.$jquery;
 			var $host;
+<<<<<<< HEAD
 			// $host = $('[mag-thumb="inner"]');
 			// $host.mag({
 			//   toggle: true
 			// });
+=======
+			$host = $('[mag-thumb="inner"]');
+			$host.mag({
+			  toggle: true
+			});
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 		},
 		closePreview: function closePreview(){
 			this.previewImgVisible = false;
@@ -230,7 +254,10 @@ var vm = new Vue({
 			axios.get(config.cin + '?station_id=' + config.station_id).then(function (res) {
 
 				if (res.data != '') {
+<<<<<<< HEAD
 					console.log('最新入场数据', res.data)
+=======
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 					_this3.handlePlateInData(res.data);
 				} else {}
 				setTimeout(function () {
@@ -249,7 +276,10 @@ var vm = new Vue({
 			} else{
 				_data.carNum = data.carNum.split('');
 			}
+<<<<<<< HEAD
 
+=======
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 			this.sendLEDMessage('in', data.carNum, '欢迎光临');
 
 			_data.picture = 'data:image/jpeg;base64,' + data.picture.replace(/ /g,"+");
@@ -264,6 +294,7 @@ var vm = new Vue({
 						&& _data.carNum.join('') == this.car_in.carNum.join('')) return;
 
 			if(data.carNum == '无牌车'){
+<<<<<<< HEAD
 
 				if(!this.carInConfirmBtnDisabled){
 					this.noCarStorage.push(_data)
@@ -276,6 +307,13 @@ var vm = new Vue({
 				this.openInGate()
 				this.carInStorage.push(_data);
 				
+=======
+				this.car_in = _data;
+				this.noCarStorage.push(_data)
+			} else {
+				console.log('push')
+				this.carInStorage.push(_data);
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 			}
 
 			this.checkStorage();
@@ -297,20 +335,40 @@ var vm = new Vue({
 			this.carInConfirmBtnDisabled = false;
 		},
 		checkStorage: function checkStorage() {
+<<<<<<< HEAD
 			// 检测无牌车以及当前正在编辑的状态
 			if (this.noCarStorage.length > 0 && this.carInConfirmBtnDisabled){
 				this.car_in = this.noCarStorage[0];
 				this.carInConfirmBtnDisabled = false;
+=======
+			if (this.noCarStorage.length > 0 && this.carInConfirmBtnDisabled){
+				this.car_in = this.noCarStorage[0];
+				this.carInConfirmBtnDisabled = false;
+
+				this.$nextTick( () => {
+					this.mouseWheelInit()
+				})
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 			} else {
 				if (this.carInStorage.length > 0 && this.carInConfirmBtnDisabled) {
 					this.car_in = this.carInStorage[0];
 					this.carInConfirmBtnDisabled = false;
+<<<<<<< HEAD
 				}
 			}
 
 			this.$nextTick( () => {
 				this.mouseWheelInit()
 			})
+=======
+
+					this.$nextTick( () => {
+						this.mouseWheelInit()
+					})
+				}
+			}
+
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 		},
 
 		sendLEDMessage(inout, carNum, tip){
@@ -353,6 +411,10 @@ var vm = new Vue({
 						that.carInStorage.shift();
 					}
 
+<<<<<<< HEAD
+=======
+					that.openInGate();
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 					that.$layer.msg(res.error_msg);
 					that.carInConfirmBtnDisabled = true;
 					that.checkStorage();
@@ -409,6 +471,7 @@ var vm = new Vue({
 					_car_out.carOutAction = 'pre_out';
 
 					// 判断出场车牌号是否重复 同一车牌号一分钟内提交
+<<<<<<< HEAD
 					console.log('length', that.car_out)
 					if(
 							that.car_out.length !== 0 &&
@@ -417,15 +480,32 @@ var vm = new Vue({
 					{
 
 						console.log('repeat')
+=======
+					if(
+							that.car_out.length &&
+							_car_out.carNum.join('') == that.car_out[0].carNum &&
+							new Date(response.outtime * 1000).getTime() - new Date(that.car_out[0].outtime).getTime() < 60000)
+					{
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 						_car_out = {};
 						setTimeout(function () {
 							that.getLoopPlateOut();
 						}, 500);
 						return
+<<<<<<< HEAD
 					} else {
 					console.log('_b')
 					console.log('__car', _car_out)
 					}
+=======
+					}
+
+
+					that.$nextTick(function () {
+						that.car_out.unshift(_car_out);
+					});
+
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 					setTimeout( () => {
 						console.log('timeout token')
 						that.car_out.unshift(_car_out);
@@ -440,6 +520,7 @@ var vm = new Vue({
 				that.getLoopPlateOut();
 			});
 		},
+<<<<<<< HEAD
 		getOutToken: function getOutToken(data, index) {
 			var _this4 = this;
 			var that   = this;
@@ -447,6 +528,43 @@ var vm = new Vue({
 
 			if(data.intime){
 				_data = JSON.stringify({
+=======
+		updateDateTimePicker: function updateDateTimePicker(){
+			const that = this;
+
+			this.$nextTick(function () {
+				layui.use(['layer', 'laydate', 'form', 'element'], function () {
+					var form = layui.form,
+							laydate = layui.laydate,
+							type = 'datetime';
+
+					var ins1 = laydate.render({
+						elem: '#time-edit', //指定元素
+						type: type,
+						change: function change(value) {
+							that.updateIntime(value);
+						},
+						done: function done(value) {
+							that.updateIntime(value);
+						}
+					});
+
+					form.render('select', 'aihao');
+				});
+			});
+		},
+		getOutToken: function getOutToken(data) {
+			var _this4 = this;
+			var that   = this;
+			if(data.intime == '') {
+				this.updateDateTimePicker()
+				return
+			};
+
+			this.car_out[0].carItemOutLoading = true;
+			this.$jquery.post(config.outToken + '?action='+ data.carOutAction+'&pid=' + config.pid + '&station_id=' + config.station_id, {
+				content: JSON.stringify({
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 					'carNum': data.carNum.join(''),
 					'intime': new Date(data.intime).getTime() / 1000,
 					'outtime': new Date(data.outtime).getTime()/1000,
@@ -484,6 +602,7 @@ var vm = new Vue({
 					data.intime = res.intime
 					// open 1:可以起杆 0：不起杆
 
+<<<<<<< HEAD
 					that.sendLEDMessage('out', res.carnum, res.tip);
 
 					if (res.open == 1) {
@@ -508,6 +627,31 @@ var vm = new Vue({
 			const _time = this.car_out[index].intime;
 			this.car_out[index].intime = new Date(_time).Format('yyyy-MM-dd hh:mm:ss');
 			this.getOutToken(this.car_out[index], index)
+=======
+				that.sendLEDMessage('in', res.carnum, res.tip);
+
+				if (res.open == 1) {
+					data.disabled = true;
+					that.openOutGate();
+				} else {}
+
+				// 使用Vue提供的$set方法更新数组
+
+				that.$set(that.car_out[0], data);
+
+				that.updateDateTimePicker()
+			}, 'json');
+		},
+
+		updateIntime: function updateIntime(intime) {
+      // 补入入场时间
+			this.car_out[0].intime = new Date(intime).getTime() / 1000;
+			this.getOutToken(this.car_out[0])
+			console.log('intime', intime)
+			const data = this.car_out[0];
+			data.intime = intime;
+			this.$set(this.car_out[0], data);
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 		},
 		getTotal: function getTotal() {
 			var that = this;
@@ -569,6 +713,7 @@ var vm = new Vue({
 
 		// 车辆确认
 		carConfirmed: function carConfirmed(index) {
+<<<<<<< HEAD
 			if(this.car_out[index].intime == ""){
 				this.$layer.msg('请填写入场时间')
 				return
@@ -577,6 +722,12 @@ var vm = new Vue({
 			this.car_out[index].intime = new Date(this.car_out[index].intime).getTime();
 			this.getOutToken(this.car_out[index], index)
 
+=======
+			this.car_out[index].carOutAction = 'user_out';
+			this.car_out[index].intime = new Date(this.car_out[index].intime).getTime();
+			this.getOutToken(this.car_out[index])
+			console.log('ok', this.car_out[index].intime)
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 			this.car_out[index].isConfirm = true;
 			this.car_out[index].carNum = this.car_out[index].carNum.join('');
 			// this.openOutGate();

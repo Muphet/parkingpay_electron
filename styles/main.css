@@ -646,18 +646,27 @@ em {
   float: right;
   position: relative;
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_status {
   height: 71px;
   font-size: 25px;
   color: #666;
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_price {
+<<<<<<< HEAD
   font-size: 60px;
   color: red;
   font-weight: normal;
   height: 120px;
+=======
+  font-size: 80px;
+  font-weight: normal;
+  height: 134px;
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
   line-height: 64px;
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .pay_price b {
@@ -722,7 +731,11 @@ em {
 }
 .bottom>.right .plate_container .plate_item_container .operation_bar .payway {
   position: absolute;
+<<<<<<< HEAD
   width: 60px;
+=======
+  width: 70px;
+>>>>>>> fd120f51cf3f114e2a16e4d609fba197b95cc40a
   right: 10px;
   top: 10px;
 }
