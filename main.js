@@ -1,14 +1,33 @@
-const {app, BrowserWindow, ipcMain} = require('electron')
+const {app, BrowserWindow, autoUpdater, dialog,  ipcMain} = require('electron')
 const path = require('path')
 const url = require('url')
 const config = require('./config.js')
-
+const updateServer = 'https://github.com/bleedkaga/parkingpay_electron'
+const updateFeedBack = `${updateServer}/releases/tag/${app.getVersion()}`
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win;
+console.log(updateFeedBack)
+const isDev = require('electron-is-dev');
+
+if (isDev) {
+  console.log('Running in development');
+} else {
+  console.log('Running in production');
+}
+// autoUpdater.setFeedURL(updateFeedBack);
 
 function createWindow () {
   // Create the browser window.
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['更新', '忽略'],
+    title: '应用更新',
+    message: '来自停吧的提示',
+    detail: '停吧收费有新的更新， 是否现在更新？'
+  }
+  
+
   win = new BrowserWindow({width: 1100, height: 1080})
   win.maximize();
   // and load the index.html of the app.

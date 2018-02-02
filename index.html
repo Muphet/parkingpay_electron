@@ -12,8 +12,10 @@
 <body >
 
     <div id="app" v-cloak>
-
-      <el-dialog :visible.sync="queryInVisible" title="车辆入场查询" >
+      <el-dialog :visible.sync="queryTemporaryVisible" title="查询临牌车" width="90%">
+        <temporary-carnum :data="temporaryData"  @temporary="handleQueryTemporary" @match="matchInRecord"> </temporary-carnum>
+      </el-dialog>
+      <el-dialog :visible.sync="queryInVisible" title="车辆入场查询" width="90%">
         <div>
           车牌号:
           <el-input v-model="queryInCarNum" :autofocus="true"  @keyup.enter.native="handleQueryIn">
@@ -33,6 +35,20 @@
           <el-table-column
             prop="station_id"
             label="入场口">
+          </el-table-column>
+          <el-table-column
+            prop="plateimage_filename"
+            label="车牌号图片">
+            <template slot-scope="scope">
+              <img :src="scope.row.plateimage_filename" class="query_img_preview zoomify">
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="fullimage_filename"
+            label="车辆图片">
+            <template slot-scope="scope">
+              <img :src="scope.row.fullimage_filename" class="query_img_preview zoomify">
+            </template>
           </el-table-column>
         </el-table>
       </el-dialog>
@@ -61,12 +77,15 @@
                 <span class="account">{{username}} 本次登录时间 {{loginTime}}</span>
             </div>
           </div>
-            <div class="right" @click="changeShift">
+            <div class="right r_right" @click="changeShift">
               <img src="images/huanban.png">
               换班
             </div>
             <div class="right" @click="queryIn">
               查询入场
+            </div>
+            <div class="right" @click="queryTemporaryVisible = !queryTemporaryVisible">
+              查询临牌车
             </div>
       </div>
     </header>
@@ -262,6 +281,7 @@
                         <el-date-picker
                           v-else
                           @change="changeInTime(index)"
+                          :readonly="item.carIntimeReadonly"
                           v-model="item.intime"
                           :picker-options="pickerOptions"
                           type="datetime"
@@ -435,7 +455,8 @@
   <script src='plugins/layui/layui.js'></script>
   <script src='framsworks/vue/vue.min.js'></script>
   <script src="plugins/element-ui/js/index.js"></script>
-
+  
+  <script src="components/temporaryCarnum.js"></script>
 
   <script src="scripts/car_select.js"></script>
   <script src="plugins/zoomify/zoomify.min.js"></script>
@@ -458,7 +479,7 @@
         ipcRenderer.send('openconsole')
       }
     })
-    var debug = false;
+    var debug = true;
     var config;
     ipcRenderer.on('asychronous-request', (event, arg) => {
       arg = JSON.parse(arg);

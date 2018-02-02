@@ -18,6 +18,10 @@ var vm = new Vue({
 			carInQueryData: [],
 			queryInLoading: false,
 
+			//临牌车
+			queryTemporaryVisible: false,
+			temporaryData: [],
+
 			page_numer_specified:1,
 			logData: [],
 			querycarno: '',
@@ -107,7 +111,7 @@ var vm = new Vue({
 					that.Out(carOutUpdate.md5)
 				}, 500)
 
-				if(that.carOut.length > 20){
+				if(that.carOut.length > 4){
 					that.carOut.pop();
 				}
 
@@ -138,8 +142,10 @@ var vm = new Vue({
 
 				if(res.data.carNum == '无牌车'){
 					res.data.carNum = ['无','牌', '车', '','','','']
+					res.data.makeup = 1;
 				} else {
 					res.data.carNum = res.data.carNum.split('')
+					res.data.makeup = 0;
 				}	
 				res.data.picture = ''
 				res.data.closeup_pic = ''
@@ -196,11 +202,12 @@ var vm = new Vue({
 					that.carOut[index].payway = res.payway;
 					that.carOut[index].stay = res.stay;
 					that.carOut[index].tip = res.tip;
-					if(res.intime == ''){
-						that.carOut[index].carIntimeReadonly = false;
-					} else {
-						that.carOut[index].carIntimeReadonly = true;
-					}
+					// if(res.intime != ''){
+					// 	that.carOut[index].carIntimeReadonly = true;
+					// }
+					// if(res.intime == '' && res.){
+					// 	that.carOut[index].carIntimeReadonly = false;
+					// }
 					if (res.open == 1) {
 						that.carOut[index].disabled = true;
 						that.carOut[index].isConfirm = true;
@@ -257,7 +264,8 @@ var vm = new Vue({
 				"outtime":new Date(this.carOut[index].outtime).getTime() / 1000,
 				"color": 	this.carOut[index].color,
 				"money":  this.revenue,
-				"reason": this.specialType
+				"reason": this.specialType,
+				"makeup": this.carOut[index].makeup
 			}
 
 			this.$jquery.ajax({
@@ -275,9 +283,12 @@ var vm = new Vue({
 					that.carOut[index].carNum = carnum;
 					that.carOut[index].isConfirm = true;
 					that.carOut[index].special = false;
+					that.carOut[index].carIntimeReadonly = true;
 					that.revenue = ''
 					that.specialType = ''
-					that.openOutGate()
+					if(!debug){
+						that.openOutGate()
+					}
 					window.removeEventListener('keydown', that.hotKeyBoard)
 					that.getTotal();
 				}, 
@@ -307,9 +318,14 @@ var vm = new Vue({
 
 					if(res.data.carNum == '无牌车'){
 						res.data.carNum = ['无','牌', '车', '','','',''];
+						
 					} else {
 						res.data.carNum = res.data.carNum.split('')
 						that.openInGate()
+					}
+
+					if(that.carIn.length > 30){
+						that.carIn.pop();
 					}
 
 					carInUpdate.md5 = res.data.md5;
@@ -369,16 +385,30 @@ var vm = new Vue({
 			const that = this;
 			const car = this.carIn[0]
 
-			const validVehicleNumber  = this.isVehicleNumber(car.carNum.join(''));
-			if(!validVehicleNumber){
-				this.$layer.msg('请输入正确的车牌号')
-				return;
-			};
-
+			if(car.carNum[0] != '临'){
+				const validVehicleNumber  = this.isVehicleNumber(car.carNum.join(''));
+				if(!validVehicleNumber){
+					this.$layer.msg('请输入正确的车牌号')
+					return;
+				};
+			} else {
+				if(car.carNum.join('').length < 3 ){
+					this.$layer.msg('请最少输入3位')
+					return;
+				}
+			}
+			
+			var makeup;
+			if(this.preInserting){
+				makeup = 1
+			} else {
+				makeup = 0;
+			}
 			var requestParams = JSON.stringify({
 				'carNum': car.carNum.join(''),
 				'intime': new Date(car.intime).getTime() / 1000,
-				'color': car.color
+				'color': car.color,
+				'makeup': makeup
 			})
 
 			console.log('car enter submit confirmed params ' + requestParams)
@@ -436,7 +466,8 @@ var vm = new Vue({
 				pid: config.pid,
 				closeup_pic: '',
 				station_id:config.station_id,
-				insert: true
+				insert: true,
+				makeup: 1
 			})
 		},
 		alreadyEntered: function(){},
@@ -669,7 +700,12 @@ var vm = new Vue({
 				success: function(res){
 					that.queryInLoading = false;
 					if(res.error_code == '0'){
-						that.carInQueryData = res.data
+						that.carInQueryData = res.data;
+
+						that.$nextTick( () => {
+							that.$jquery('.zoomify').zoomify();
+							that.getQueryInImg();	
+						})
 					} else {
 						that.$layer.msg(res.error_msg)
 					}
@@ -679,7 +715,6 @@ var vm = new Vue({
 					if(xhr.readyState == 0 || xhr.statusText == 'timeout'){
 						that.$layer.msg('连接超时！')
 					}
-					console.log('request preout Api timeout!')
 				}
 			})
 		},
@@ -687,9 +722,96 @@ var vm = new Vue({
 			this.$nextTick( function(){
 				this.$refs['usernameFocus'].focus();
 			})
+		},
+		getQueryInImg: function( ){
+			const that = this;
+			this.carInQueryData.forEach( function( item ){
+				that.getImg(item.fullimage_filename).then( () => {
+					item.fullimage_filename = config.server + '/img?uri='+ item.fullimage_filename;
+				})
+				that.getImg(item.plateimage_filename).then( () => {
+					item.plateimage_filename = config.server + '/img?uri='+item.plateimage_filename;
+				})
+			})
+		},
+		// 查询临牌车
+		handleQueryTemporary: function( car ){
+			const that = this;
+			var page = 1;
+			if(car == ''){
+				this.$layer.msg('请输入要查询的车牌号')
+				return;
+			}
+
+			this.$jquery.ajax({
+				url:config.carin,
+				type: 'POST',
+				data: {
+					pid: config.pid,
+					carno: car,
+					page: page
+				},
+				dataType: 'json',
+				success: function(res){
+
+					if(res.error_code == '0'){
+						that.temporaryData = res.data;
+
+						that.$nextTick( () => {
+							that.$jquery('.zoomify').zoomify();
+							that.getQueryInImg();	
+						})
+					} else {
+						that.$layer.msg(res.error_msg)
+					}
+				},
+				error: function(xhr, status){
+					that.queryInLoading = false;
+					if(xhr.readyState == 0 || xhr.statusText == 'timeout'){
+						that.$layer.msg('连接超时！')
+					}
+				}
+			})
+		},
+		// 匹配临牌车入场记录
+		matchInRecord: function( record ){
+			this.queryTemporaryVisible = false;
+			
+			console.log('确认临牌车的匹配记录', record)
+
+			if(this.carOut.length > 0){
+				const out = this.carOut[0];
+
+				if(!out.isConfirm){		//只有没有确认才匹配入场记录
+					out.intime = new Date(record.intime);
+					out.carNum = record.carno.split('');
+					this.getImg(record.plateimage_filename).then( res => {
+						out.plateimage_filename = record.plateimage_filename
+					})
+
+					this.getImg(record.fullimage_filename).then( res => {
+						out.fullimage_filename = record.fullimage_filename
+					})
+
+					this.preOut({
+						carNum: out.carNum.join(''),
+						intime: timestampToUnix(out.intime),
+						outtime: timestampToUnix(out.outtime),
+						color:   out.color
+					}, 0)
+				}
+			}
 		}
 	}
 })
+
+function timestampToUnix( timestamp ){
+	return Math.round(new Date(timestamp).getTime() / 1000)
+}
+
+function unixToTimestamp( timestamp ){
+	return Math.round(new Date(timestamp).getTime() * 1000)
+}
 
 function isArray( arr ){
 	return Object.prototype.toString.call(arr) == '[object Array]'
