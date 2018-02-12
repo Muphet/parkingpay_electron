@@ -84,7 +84,7 @@
             <div class="right" @click="queryIn">
               查询入场
             </div>
-            <div class="right" @click="queryTemporaryVisible = !queryTemporaryVisible">
+            <div class="right" @click="queryLinpai">
               查询临牌车
             </div>
       </div>
@@ -148,8 +148,8 @@
           </div>
           <div class="panel layui-form" v-if="carIn.length > 0" v-loading="carInSubmitLoading" element-loading-text="数据提交中...">
             <div class="in_car_imgbox" >
-
-              <span v-if="carIn[0].picture" >
+              <span v-if="!preInserting">
+                <span v-if="carIn[0].picture" >
                   <div mag-thumb="inner" v-if="!switch_car">
                     <img class="carimg zoomify"   :src="carIn[0].closeup_pic" >
                   </div>
@@ -157,8 +157,13 @@
                     <img class="carimg zoomify"  :src="carIn[0].picture">
                   </div>
                   <button class="switch_car" @click="switch_car_handle">{{switch_car ? '全景' : '车牌号'}}</button>
+                </span>
+                <img v-else class="carimg default zoomify" src="images/default_in_car.png" >
               </span>
-              <img v-else class="carimg default zoomify" src="images/default_in_car.png" >
+              <span v-else>
+                 <img class="carimg default zoomify" src="images/default_in_car.png" >
+              </span>
+              
             </div>
             <div class="car_in_times">
               入场时间：
@@ -187,7 +192,7 @@
             <div class="group btn_group">
               <button class="confirm" @click="carConfirmEnter"  :disabled="carInConfirmBtnDisabled">确认</button>
               <br>
-              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="insertDisabled">补入</button>
+              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="preInserting">补入</button>
             </div>
           </div>
           <div class="panel" v-else>
@@ -217,7 +222,7 @@
             <div class="group btn_group">
               <button class="confirm" :disabled="true">确认</button>
               <br>
-              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="insertDisabled">补入</button>
+              <button class="confirm" style="background:#188fff;" @click="insertCarRecord"  :disabled="preInserting">补入</button>
             </div>
           </div>
 
@@ -243,7 +248,7 @@
 
               <div  class="plate_item list-complete-item"  v-for="(item, index) in carOut" v-bind:key="item">
                 <div class="toptips">车辆出场信息 - {{item.tip}}</div>
-                <div class="plate_item_container" v-loading="item.carItemOutLoading" element-loading-text="数据提交中...">
+                <div class="plate_item_container" v-loading="item.carItemOutLoading" :element-loading-text="item.loadingText">
                   <div class="vehicle_image">
                     <span style="position: relative; display: block; height: 100%; border: 1px solid #ddd;">
                       <img v-if="!item.switch_car" class="default_in_car zoomify" :src="item.closeup_pic">
@@ -253,7 +258,7 @@
                      <button class="switch_car" @click="switchItemPreview(index)">{{item.switch_car ? '全景' : '车牌号'}}</button>
 
                     <div class="recap">
-                      <el-button type="primary" style="width: 100%;" @click="bupai">补拍</el-button>
+                      <el-button type="primary" style="width: 100%;" @click="bupai('out')">补  拍</el-button>
                     </div>
                   </div>
                   <div class="plate_vehicle_info">
@@ -456,8 +461,8 @@
   <script src='framsworks/vue/vue.min.js'></script>
   <script src="plugins/element-ui/js/index.js"></script>
   
-  <script src="components/temporaryCarnum.js"></script>
-
+  
+  <script src="scripts/wechatPay.js"></script>
   <script src="scripts/car_select.js"></script>
   <script src="plugins/zoomify/zoomify.min.js"></script>
   <script>
@@ -479,14 +484,20 @@
         ipcRenderer.send('openconsole')
       }
     })
-    var debug = true;
+    var debug = false;
     var config;
+    window.addEventListener('keydown keyup', function(e){
+      if(e.code == 'Space'){
+        e.preventDefault()
+      }
+    })
     ipcRenderer.on('asychronous-request', (event, arg) => {
       arg = JSON.parse(arg);
       if(debug){
         config = {
           server: 'http://127.0.0.1:8110',
-          station_id: 1,
+          // server: 'http://192.168.11.252:8110',
+          station_id: 2,
           pid: 1,
           api: 'https://www.parkingpay.net',
           cin: 'http://127.0.0.1:8110/cin',
@@ -538,5 +549,6 @@
 
     updateOnlineStatus()
   </script>
+  <script src="components/temporaryCarnum.js"></script>
 </body>
 </html>

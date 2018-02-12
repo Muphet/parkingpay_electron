@@ -1,5 +1,5 @@
 {
-  "station_id": "1",
+  "station_id": "2",
   "server": "http://192.168.11.252:8110",
   "pid": "1",
   "api": "https://www.parkingpay.net"

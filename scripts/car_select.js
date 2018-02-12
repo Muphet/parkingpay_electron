@@ -8,9 +8,11 @@ Vue.component('car-select', {
 							@click="plateFocus($event, index)"
 							@change="plateChange"
 							ref="input"
+							:id="'carnum_'+index"
+							:data-index="index"
 							:placeholder="sub"
 							maxlength="1"
-							class="plate_character" type="text" v-for="(sub, index) in data" :value="sub" name="">
+							class="plate_character" type="text" v-for="(sub, index) in data" :value="sub">
 					</div>
 					<transition name="el-zoom-in-top">
 						<div class="dropdown" v-if="carDropdown">
@@ -93,7 +95,13 @@ Vue.component('car-select', {
 
 		},
 		checkKeyCode(e, index){
-			console.log(e.keyCode)
+			if(e.keyCode == 8){
+				this.data.splice(index, 1, '')
+				if(index <= 0) return;
+				this.$refs.input[--index].focus()
+			}
+
+
 			if(
 				(e.keyCode >= 65 && e.keyCode <= 90) ||
 				(e.keyCode >= 48 && e.keyCode <= 57) ||
@@ -102,18 +110,13 @@ Vue.component('car-select', {
 
 				// 键盘直接输入
 				if(index > 0 && e.keyCode >= 35 && e.keyCode <= 45 ){
-					this.data[index] = '';
-					console.log(e.keyCode, e.key)
 					this.data.splice(index, 1, e.key)
-					console.log(this.$refs.input[index++])
-					if(index == this.data.length) return;
-					this.$refs.input[index++].focus()
+					if(index >= this.data.length - 1) return;
+					this.$refs.input[++index].focus()
 				} else if( index > 0){
-					this.data[index] = '';
 					this.data.splice(index, 1, e.key.toUpperCase())
-					console.log(this.$refs.input[index++])
-					if(index == this.data.length) return;
-					this.$refs.input[index++].focus()
+					if(index >= this.data.length - 1) return;
+					this.$refs.input[++index].focus()
 				}
 
 				const filteredProvinceList = this.car_in.carNumber.filter( item => {
@@ -124,10 +127,11 @@ Vue.component('car-select', {
 
 				if(index == 0 && filteredProvinceList.length == 1){
 					this.data.splice(0, 1, filteredProvinceList[0].value)
-					this.input_index++;
-					this.$refs.input[this.input_index].focus()
+					if(index >= this.data.length - 1) return
+					this.$refs.input[++index].focus()
 				}
 
+				this.$emit('selected', this.data)
 			}
 
 			if(e.keyCode == 8 || e.key == 'Backspace'){
@@ -159,7 +163,10 @@ Vue.component('car-select', {
 			this.data.splice(this.input_index, 1, e.target.dataset.key)
 			this.carDropdown = false;
 			this.input_index++;
-			this.$refs.input[this.input_index].focus()
+			if(this.input_index <= this.data.length - 1){
+				this.$refs.input[this.input_index].focus()
+			}
+			
 			this.$emit('selected', this.data)
 		}
 	}
